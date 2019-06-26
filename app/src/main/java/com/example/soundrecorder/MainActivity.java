@@ -8,16 +8,25 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -26,11 +35,27 @@ public class MainActivity extends AppCompatActivity {
     private Button stop;
     private Button record;
     private Button stopRecord;
+    private TextView txt1;
+    private Button calcul;
+
     MediaPlayer mediaPlayer;
     MediaRecorder mediaRecorder;
     String pathsave="";
 
     final int REQUEST_PERMISSION_CODE=1000;
+
+    AudioTrack audioOut = null;
+    int sampleRate = 44100;
+
+    int minSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+
+    byte [] music;
+    short[] music2Short;
+
+    InputStream is;
+
+    FileInputStream file1 = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,10 +65,12 @@ public class MainActivity extends AppCompatActivity {
         if(!checkPermissionFromDevice()){
             RequestPermission();
         }
-        this.stop= (Button) findViewById(R.id.stop);
-        this.play= (Button) findViewById(R.id.play);
-        this.stopRecord= (Button) findViewById(R.id.stopRecord);
-        this.record= (Button) findViewById(R.id.record);
+        this.stop= findViewById(R.id.stop);
+        this.play= findViewById(R.id.play);
+        this.stopRecord= findViewById(R.id.stopRecord);
+        this.record= findViewById(R.id.record);
+        calcul=findViewById(R.id.calcul);
+        txt1=findViewById(R.id.txt1);
 
             record.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -100,11 +127,35 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+            calcul.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    playAudio();
 
-     /*   else{
-            RequestPermission();
-        }
-*/
+                    if (is != null){
+
+                        int i;
+                        //buffer with the signal
+                        try{
+                            while (((i = is.read(music)) != -1)) {
+                                ByteBuffer.wrap(music).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(music2Short);
+                            }
+                        } catch (IOException e){
+                            e.printStackTrace();
+                        }
+
+                        //timeSize should be a power of two.
+                        int timeSize= 2^(nearest_power_2(minSize));
+
+                        FFT a = new FFT(1024,sampleRate);
+
+                        a.forward(Tofloat(music2Short));
+                        txt1.setText(Float.toString(a.real[500]));
+                    }
+                }
+            });
+
+
 
 
     }
@@ -115,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
         mediaRecorder.setOutputFile(pathsave);
+        //mediaRecorder.setOutputFile();
     }
 
     private boolean checkPermissionFromDevice() {
@@ -146,6 +198,67 @@ public class MainActivity extends AppCompatActivity {
             break;
         }
 
+    }
+
+    public void initialize(){
+
+        File initialFile = new File(pathsave);
+        try{
+            is = new FileInputStream(initialFile);
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+
+
+
+
+        audioOut = new AudioTrack(
+                AudioManager.STREAM_MUSIC,          // Stream Type
+                sampleRate,                         // Initial Sample Rate in Hz
+                AudioFormat.CHANNEL_OUT_MONO,       // Channel Configuration
+                AudioFormat.ENCODING_PCM_16BIT,     // Audio Format
+                minSize,                            // Buffer Size in Bytes
+                AudioTrack.MODE_STREAM);            // Streaming static Buffer
+
+    }
+
+    public int nearest_power_2(int x){
+        int i=0;
+        int p = 1;
+        while (p<x){
+            p=2*p;
+            i++;
+        }
+        if ((x-p)<(x-p/2))
+            return i;
+        else
+            return i-1;
+    }
+
+    public void playAudio() {
+
+        this.initialize();
+
+        if ( (minSize/2) % 2 != 0 ) {
+            /*If minSize divided by 2 is odd, then subtract 1 and make it even*/
+            music2Short     = new short [((minSize/2) - 1)/2];
+            music           = new byte  [(minSize/2) - 1];
+        }
+        else {
+            /* Else it is even already */
+            music2Short     = new short [minSize/4];
+            music           = new byte  [minSize/2];
+        }
+    }
+
+    public float[] Tofloat(short[] s){
+        int len = s.length;
+        float[] f= new float[len];
+        for (int i=0;i<len;i++){
+            f[i]=s[i];
+        }
+        return f;
     }
 }
 

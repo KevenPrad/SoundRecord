@@ -4,5 +4,6 @@
     <string name="stop">Stop</string>
     <string name="stop_record">Stop record</string>
     <string name="record">Record</string>
+    <string name="calcul">FFT calcul</string>
 </resources>
 

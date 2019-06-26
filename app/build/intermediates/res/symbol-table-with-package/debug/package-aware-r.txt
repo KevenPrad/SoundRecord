@@ -679,6 +679,7 @@ id beginning
 id blocking
 id bottom
 id buttonPanel
+id calcul
 id center
 id center_horizontal
 id center_vertical
@@ -783,13 +784,13 @@ id text
 id text2
 id textSpacerNoButtons
 id textSpacerNoTitle
-id textView
 id time
 id title
 id titleDividerNoCustom
 id title_template
 id top
 id topPanel
+id txt1
 id uniform
 id up
 id useLogo
@@ -883,6 +884,7 @@ string abc_shareactionprovider_share_with
 string abc_shareactionprovider_share_with_application
 string abc_toolbar_collapse_description
 string app_name
+string calcul
 string play
 string record
 string search_menu_title
