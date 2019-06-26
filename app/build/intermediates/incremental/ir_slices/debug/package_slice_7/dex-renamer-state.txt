@@ -1,0 +1,4 @@
+#Fri Jun 14 13:57:25 CEST 2019
+base.0=/home/asus/AndroidStudioProjects/SoundRecorder/app/build/intermediates/transforms/dexMerger/debug/7
+path.0=classes.dex
+renamed.0=classes.dex
